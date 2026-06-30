@@ -276,19 +276,8 @@ function Planner({ me, onSwitch }) {
         {/* spacer to give the gray header body some height */}
         <div style={{ height: 70 }} />
 
-        {/* Tabs row at the very bottom edge of the gray; ET overlaps upward, hands gripping the gray/white boundary */}
+        {/* Tabs row at the very bottom edge of the gray */}
         <div style={{ position: "relative" }}>
-          <img src={etImg} alt="ET"
-            style={{
-              position: "absolute",
-              left: 8,
-              bottom: -58,
-              height: 160,
-              width: "auto",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          />
           <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 24px", display: "flex", justifyContent: "center" }}>
             <div style={{ display: "flex" }}>
               {[{ k: "todo", label: "TO DO" }, { k: "leaves", label: "CONCEDII" }].map(({ k, label }) => (
@@ -298,6 +287,22 @@ function Planner({ me, onSwitch }) {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* ET anchored to the header's true bottom edge (the gray/white boundary), aligned under the title */}
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
+          <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 24px", position: "relative" }}>
+            <img src={etImg} alt="ET"
+              style={{
+                position: "absolute",
+                left: 8,
+                bottom: -59,
+                height: 160,
+                width: "auto",
+                userSelect: "none",
+              }}
+            />
           </div>
         </div>
       </div>
