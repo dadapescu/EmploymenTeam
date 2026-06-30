@@ -185,7 +185,7 @@ function Planner({ me, onSwitch }) {
     if (!taskForm.title.trim()) return;
     const { id, ...data } = taskForm;
     if (editId) await updateDoc(doc(db, "tasks", editId), data);
-    else await addDoc(collection(db, "tasks"), data);
+    else await addDoc(collection(db, "tasks"), { ...data, createdAt: Date.now() });
     setModal(null);
   }
   async function deleteTask(id) { await deleteDoc(doc(db, "tasks", id)); }
@@ -212,10 +212,22 @@ function Planner({ me, onSwitch }) {
     return t.createdBy === me || t.assignees?.includes(me);
   }
 
+  function sortTasks(list) {
+    return [...list].sort((a, b) => {
+      const aOverdue = !a.done && isOverdue(a.due) ? 1 : 0;
+      const bOverdue = !b.done && isOverdue(b.due) ? 1 : 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+      const aImp = a.important ? 1 : 0;
+      const bImp = b.important ? 1 : 0;
+      if (aImp !== bImp) return bImp - aImp;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+  }
+
   function tasksForColumn(col) {
     const visible = tasks.filter(isVisibleToMe);
-    if (col === "BD") return visible.filter((t) => t.column === "BD");
-    return visible.filter((t) => t.column === col || (t.assignees?.includes(col) && t.column !== col && t.column !== "BD"));
+    if (col === "BD") return sortTasks(visible.filter((t) => t.column === "BD"));
+    return sortTasks(visible.filter((t) => t.column === col || (t.assignees?.includes(col) && t.column !== col && t.column !== "BD")));
   }
 
   const myColor = getPersonColor(me, extraNames);
