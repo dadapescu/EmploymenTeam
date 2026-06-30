@@ -202,12 +202,15 @@ function Planner({ me, onSwitch }) {
   async function saveTask() {
     if (!taskForm.title.trim()) return;
     const { id, ...data } = taskForm;
-    // ensure no undefined values reach Firestore
     const clean = {};
     for (const [k, v] of Object.entries(data)) clean[k] = v === undefined ? null : v;
-    if (editId) await updateDoc(doc(db, "tasks", editId), clean);
-    else await addDoc(collection(db, "tasks"), { ...clean, createdAt: Date.now() });
-    setModal(null);
+    try {
+      if (editId) await updateDoc(doc(db, "tasks", editId), clean);
+      else await addDoc(collection(db, "tasks"), { ...clean, createdAt: Date.now() });
+      setModal(null);
+    } catch (err) {
+      alert("Eroare la salvare: " + (err?.message || err));
+    }
   }
   async function deleteTask(id) { await deleteDoc(doc(db, "tasks", id)); }
   async function toggleImportant(id) { const t = tasks.find((x) => x.id === id); await updateDoc(doc(db, "tasks", id), { important: !t.important }); }
@@ -411,6 +414,7 @@ function Planner({ me, onSwitch }) {
                 </Field>
                 <Field label="Deadline">
                   <input type="date" value={taskForm.due} onChange={(e) => setTaskForm((f) => ({ ...f, due: e.target.value }))} style={iStyle} />
+                  <div style={{ fontSize: 11, color: K.gray30, marginTop: 4 }}>Valoare selectata: {taskForm.due || "(goala)"}</div>
                 </Field>
                 <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
                   <button onClick={() => setTaskForm((f) => ({ ...f, important: !f.important }))}
