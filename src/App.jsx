@@ -71,7 +71,7 @@ function PasswordGate({ onAuth }) {
       <div style={{ background: K.white, borderRadius: 16, padding: "40px 36px", maxWidth: 360, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,0.3)", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 28 }}>
           <div style={{ width: 5, height: 28, background: K.orange, borderRadius: 3 }} />
-          <div style={{ fontSize: 20, fontWeight: 700, color: K.gray70 }}>ET Planner</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: K.gray70 }}>ET PLANNER</div>
         </div>
         <input
           type="password" value={val} placeholder="Parola"
@@ -99,7 +99,7 @@ function NameGate({ onPick }) {
       <div style={{ background: K.white, borderRadius: 16, padding: "40px 36px", maxWidth: 380, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,0.3)", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
           <div style={{ width: 5, height: 28, background: K.orange, borderRadius: 3 }} />
-          <div style={{ fontSize: 20, fontWeight: 700, color: K.gray70 }}>ET Planner</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: K.gray70 }}>ET PLANNER</div>
         </div>
         <div style={{ fontSize: 13, color: K.gray30, marginBottom: 28 }}>Cine esti?</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -244,9 +244,9 @@ function Planner({ me, onSwitch }) {
         <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 24px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 0 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 6, height: 36, background: K.orange, borderRadius: 3 }} />
+              <div style={{ width: 7, height: 44, background: K.orange, borderRadius: 3 }} />
               <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: K.white, letterSpacing: -0.3 }}>ET Planner</div>
+                <div style={{ fontSize: 27, fontWeight: 700, color: K.white, letterSpacing: -0.3 }}>ET PLANNER</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -271,31 +271,29 @@ function Planner({ me, onSwitch }) {
               </div>
             </div>
           </div>
-
-          {/* ET hanging at the bottom edge of the header */}
-          <div style={{ position: "relative", height: 78, marginTop: 10 }}>
-            <img src={etImg} alt="ET"
-              style={{
-                position: "absolute",
-                left: "50%",
-                bottom: 0,
-                transform: "translateX(-50%)",
-                height: 170,
-                width: "auto",
-                pointerEvents: "none",
-                userSelect: "none",
-              }}
-            />
-          </div>
         </div>
 
-        {/* Tabs: in continuation of the edge ET holds onto, centered under his hands */}
-        <div style={{ borderTop: `1px solid ${K.gray50}` }}>
+        {/* spacer to give the gray header body some height */}
+        <div style={{ height: 70 }} />
+
+        {/* Tabs row at the very bottom edge of the gray; ET overlaps upward, hands gripping the gray/white boundary */}
+        <div style={{ position: "relative" }}>
+          <img src={etImg} alt="ET"
+            style={{
+              position: "absolute",
+              left: 8,
+              bottom: -58,
+              height: 160,
+              width: "auto",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
           <div style={{ maxWidth: 1300, margin: "0 auto", padding: "0 24px", display: "flex", justifyContent: "center" }}>
             <div style={{ display: "flex" }}>
               {[{ k: "todo", label: "TO DO" }, { k: "leaves", label: "CONCEDII" }].map(({ k, label }) => (
                 <button key={k} onClick={() => setTab(k)}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: "10px 26px", fontSize: 13, fontWeight: tab === k ? 700 : 400, color: tab === k ? K.white : K.gray30, borderBottom: tab === k ? `3px solid ${K.orange}` : "3px solid transparent", letterSpacing: 0.5 }}>
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "12px 30px", fontSize: 15, fontWeight: tab === k ? 700 : 400, color: tab === k ? K.white : K.gray30, borderBottom: tab === k ? `3px solid ${K.orange}` : "3px solid transparent", letterSpacing: 0.5 }}>
                   {label}
                 </button>
               ))}
