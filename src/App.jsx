@@ -297,7 +297,7 @@ function Planner({ me, onSwitch }) {
               style={{
                 position: "absolute",
                 left: 8,
-                bottom: -52,
+                bottom: -56,
                 height: 160,
                 width: "auto",
                 userSelect: "none",
