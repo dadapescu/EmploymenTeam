@@ -413,8 +413,7 @@ function Planner({ me, onSwitch }) {
                   </div>
                 </Field>
                 <Field label="Deadline">
-                  <input type="date" value={taskForm.due} onChange={(e) => setTaskForm((f) => ({ ...f, due: e.target.value }))} style={iStyle} />
-                  <div style={{ fontSize: 11, color: K.gray30, marginTop: 4 }}>Valoare selectata: {taskForm.due || "(goala)"}</div>
+                  <DatePicker value={taskForm.due} onChange={(v) => setTaskForm((f) => ({ ...f, due: v }))} />
                 </Field>
                 <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
                   <button onClick={() => setTaskForm((f) => ({ ...f, important: !f.important }))}
@@ -452,8 +451,8 @@ function Planner({ me, onSwitch }) {
                     })}
                   </div>
                 </Field>
-                <Field label="De la"><input type="date" value={leaveForm.start} onChange={(e) => setLeaveForm((f) => ({ ...f, start: e.target.value }))} style={iStyle} /></Field>
-                <Field label="Pana la"><input type="date" value={leaveForm.end} onChange={(e) => setLeaveForm((f) => ({ ...f, end: e.target.value }))} style={iStyle} /></Field>
+                <Field label="De la"><DatePicker value={leaveForm.start} onChange={(v) => setLeaveForm((f) => ({ ...f, start: v }))} /></Field>
+                <Field label="Pana la"><DatePicker value={leaveForm.end} onChange={(v) => setLeaveForm((f) => ({ ...f, end: v }))} /></Field>
                 <Field label="Nota"><input value={leaveForm.label} onChange={(e) => setLeaveForm((f) => ({ ...f, label: e.target.value }))} placeholder="Ex: Concediu vara" style={iStyle} /></Field>
                 <ModalActions onCancel={() => setModal(null)} onSave={saveLeave} disabled={!leaveForm.start || !leaveForm.end} label={editId ? "Salveaza" : "Adauga"} />
               </>
@@ -640,6 +639,45 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
+function DatePicker({ value, onChange }) {
+  // value is "YYYY-MM-DD" or ""
+  const [y, m, d] = value ? value.split("-") : ["", "", ""];
+  const months = ["Ian", "Feb", "Mar", "Apr", "Mai", "Iun", "Iul", "Aug", "Sep", "Oct", "Noi", "Dec"];
+  const now = new Date().getFullYear();
+  const years = [];
+  for (let yr = now; yr <= now + 3; yr++) years.push(yr);
+  const daysInM = (yy, mm) => (yy && mm ? new Date(parseInt(yy), parseInt(mm), 0).getDate() : 31);
+  const dayCount = daysInM(y, m);
+
+  function emit(ny, nm, nd) {
+    if (ny && nm && nd) onChange(`${ny}-${String(nm).padStart(2, "0")}-${String(nd).padStart(2, "0")}`);
+    else onChange("");
+  }
+
+  const sel = { flex: 1, padding: "9px 8px", borderRadius: 8, border: `1.5px solid ${K.gray10}`, fontSize: 14, color: K.gray70, outline: "none", fontFamily: "inherit", background: "#fff", cursor: "pointer" };
+
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      <select value={d ? String(parseInt(d)) : ""} onChange={(e) => emit(y, m, e.target.value)} style={sel}>
+        <option value="">Zi</option>
+        {Array.from({ length: dayCount }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+      </select>
+      <select value={m ? String(parseInt(m)) : ""} onChange={(e) => emit(y, e.target.value, d)} style={{ ...sel, flex: 1.3 }}>
+        <option value="">Luna</option>
+        {months.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}
+      </select>
+      <select value={y || ""} onChange={(e) => emit(e.target.value, m, d)} style={sel}>
+        <option value="">An</option>
+        {years.map((yr) => <option key={yr} value={yr}>{yr}</option>)}
+      </select>
+      {value && (
+        <button onClick={() => onChange("")} title="Sterge data"
+          style={{ border: `1.5px solid ${K.gray10}`, background: "#fff", borderRadius: 8, padding: "0 10px", cursor: "pointer", color: K.gray30, fontSize: 16 }}>×</button>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
