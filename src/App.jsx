@@ -297,7 +297,7 @@ function Planner({ me, onSwitch }) {
               style={{
                 position: "absolute",
                 left: 8,
-                bottom: -56,
+                bottom: -58,
                 height: 160,
                 width: "auto",
                 userSelect: "none",
@@ -346,7 +346,7 @@ function Planner({ me, onSwitch }) {
                       <button onClick={() => toggleExpandDone(col)}
                         style={{ width: "100%", display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: "6px 2px", color: K.gray50, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>
                         <span style={{ transform: expandedDone[col] ? "rotate(90deg)" : "none", display: "inline-block", fontSize: 9 }}>▶</span>
-                        Done <span style={{ background: K.gray10, color: K.gray50, borderRadius: 9, padding: "1px 7px", fontSize: 10 }}>{done.length}</span>
+                        Dobby is free <span style={{ background: K.gray10, color: K.gray50, borderRadius: 9, padding: "1px 7px", fontSize: 10 }}>{done.length}</span>
                       </button>
                       {expandedDone[col] && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
