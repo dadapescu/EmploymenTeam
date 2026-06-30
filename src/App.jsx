@@ -640,38 +640,49 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
 
 // ── Helpers ───────────────────────────────────────────────────────
 function DatePicker({ value, onChange }) {
-  // value is "YYYY-MM-DD" or ""
-  const [y, m, d] = value ? value.split("-") : ["", "", ""];
+  // value is "YYYY-MM-DD" or "" — keep partial selections in local state
+  const [parts, setParts] = useState(() => {
+    if (value && value.includes("-")) {
+      const [yy, mm, dd] = value.split("-");
+      return { d: String(parseInt(dd)), m: String(parseInt(mm)), y: yy };
+    }
+    return { d: "", m: "", y: "" };
+  });
+
   const months = ["Ian", "Feb", "Mar", "Apr", "Mai", "Iun", "Iul", "Aug", "Sep", "Oct", "Noi", "Dec"];
   const now = new Date().getFullYear();
   const years = [];
   for (let yr = now; yr <= now + 3; yr++) years.push(yr);
-  const daysInM = (yy, mm) => (yy && mm ? new Date(parseInt(yy), parseInt(mm), 0).getDate() : 31);
-  const dayCount = daysInM(y, m);
+  const daysInM = (yy, mm) => (mm ? new Date(parseInt(yy) || now, parseInt(mm), 0).getDate() : 31);
+  const dayCount = daysInM(parts.y, parts.m);
 
-  function emit(ny, nm, nd) {
-    if (ny && nm && nd) onChange(`${ny}-${String(nm).padStart(2, "0")}-${String(nd).padStart(2, "0")}`);
-    else onChange("");
+  function update(next) {
+    setParts(next);
+    if (next.d && next.m && next.y) {
+      onChange(`${next.y}-${String(next.m).padStart(2, "0")}-${String(next.d).padStart(2, "0")}`);
+    } else {
+      onChange("");
+    }
   }
 
   const sel = { flex: 1, padding: "9px 8px", borderRadius: 8, border: `1.5px solid ${K.gray10}`, fontSize: 14, color: K.gray70, outline: "none", fontFamily: "inherit", background: "#fff", cursor: "pointer" };
 
   return (
     <div style={{ display: "flex", gap: 8 }}>
-      <select value={d ? String(parseInt(d)) : ""} onChange={(e) => emit(y, m, e.target.value)} style={sel}>
+      <select value={parts.d} onChange={(e) => update({ ...parts, d: e.target.value })} style={sel}>
         <option value="">Zi</option>
         {Array.from({ length: dayCount }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
       </select>
-      <select value={m ? String(parseInt(m)) : ""} onChange={(e) => emit(y, e.target.value, d)} style={{ ...sel, flex: 1.3 }}>
+      <select value={parts.m} onChange={(e) => update({ ...parts, m: e.target.value })} style={{ ...sel, flex: 1.3 }}>
         <option value="">Luna</option>
         {months.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}
       </select>
-      <select value={y || ""} onChange={(e) => emit(e.target.value, m, d)} style={sel}>
+      <select value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} style={sel}>
         <option value="">An</option>
         {years.map((yr) => <option key={yr} value={yr}>{yr}</option>)}
       </select>
-      {value && (
-        <button onClick={() => onChange("")} title="Sterge data"
+      {(parts.d || parts.m || parts.y) && (
+        <button onClick={() => update({ d: "", m: "", y: "" })} title="Sterge data"
           style={{ border: `1.5px solid ${K.gray10}`, background: "#fff", borderRadius: 8, padding: "0 10px", cursor: "pointer", color: K.gray30, fontSize: 16 }}>×</button>
       )}
     </div>
