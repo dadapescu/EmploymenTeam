@@ -640,50 +640,17 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
 
 // ── Helpers ───────────────────────────────────────────────────────
 function DatePicker({ value, onChange }) {
-  // value is "YYYY-MM-DD" or "" — keep partial selections in local state
-  const [parts, setParts] = useState(() => {
-    if (value && value.includes("-")) {
-      const [yy, mm, dd] = value.split("-");
-      return { d: String(parseInt(dd)), m: String(parseInt(mm)), y: yy };
-    }
-    return { d: "", m: "", y: "" };
-  });
-
-  const months = ["Ian", "Feb", "Mar", "Apr", "Mai", "Iun", "Iul", "Aug", "Sep", "Oct", "Noi", "Dec"];
-  const now = new Date().getFullYear();
-  const years = [];
-  for (let yr = now; yr <= now + 3; yr++) years.push(yr);
-  const daysInM = (yy, mm) => (mm ? new Date(parseInt(yy) || now, parseInt(mm), 0).getDate() : 31);
-  const dayCount = daysInM(parts.y, parts.m);
-
-  function update(next) {
-    setParts(next);
-    if (next.d && next.m && next.y) {
-      onChange(`${next.y}-${String(next.m).padStart(2, "0")}-${String(next.d).padStart(2, "0")}`);
-    } else {
-      onChange("");
-    }
-  }
-
-  const sel = { flex: 1, padding: "9px 8px", borderRadius: 8, border: `1.5px solid ${K.gray10}`, fontSize: 14, color: K.gray70, outline: "none", fontFamily: "inherit", background: "#fff", cursor: "pointer" };
-
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <select value={parts.d} onChange={(e) => update({ ...parts, d: e.target.value })} style={sel}>
-        <option value="">Zi</option>
-        {Array.from({ length: dayCount }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
-      <select value={parts.m} onChange={(e) => update({ ...parts, m: e.target.value })} style={{ ...sel, flex: 1.3 }}>
-        <option value="">Luna</option>
-        {months.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}
-      </select>
-      <select value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} style={sel}>
-        <option value="">An</option>
-        {years.map((yr) => <option key={yr} value={yr}>{yr}</option>)}
-      </select>
-      {(parts.d || parts.m || parts.y) && (
-        <button onClick={() => update({ d: "", m: "", y: "" })} title="Sterge data"
-          style={{ border: `1.5px solid ${K.gray10}`, background: "#fff", borderRadius: 8, padding: "0 10px", cursor: "pointer", color: K.gray30, fontSize: 16 }}>×</button>
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <input
+        type="date"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        style={{ flex: 1, padding: "9px 12px", borderRadius: 8, border: `1.5px solid ${K.gray10}`, fontSize: 14, color: K.gray70, outline: "none", fontFamily: "inherit", background: "#fff", cursor: "pointer", colorScheme: "light" }}
+      />
+      {value && (
+        <button onClick={() => onChange("")} title="Sterge data"
+          style={{ border: `1.5px solid ${K.gray10}`, background: "#fff", borderRadius: 8, padding: "0 10px", height: 38, cursor: "pointer", color: K.gray30, fontSize: 16 }}>×</button>
       )}
     </div>
   );
