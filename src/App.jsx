@@ -48,10 +48,13 @@ function firstDayOfMonth(y, m) { let d = new Date(y, m, 1).getDay(); return d ==
 
 // ════════════════════════════════════════════════════════════════
 export default function App() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("et_auth") === "1");
+  const [authed, setAuthed] = useState(() => {
+    const saved = localStorage.getItem("et_auth_until");
+    return saved && Date.now() < parseInt(saved, 10);
+  });
   const [me, setMe] = useState(() => localStorage.getItem("et_me") || null);
 
-  if (!authed) return <PasswordGate onAuth={() => { sessionStorage.setItem("et_auth", "1"); setAuthed(true); }} />;
+  if (!authed) return <PasswordGate onAuth={() => { localStorage.setItem("et_auth_until", String(Date.now() + 7 * 24 * 60 * 60 * 1000)); setAuthed(true); }} />;
   if (!me) return <NameGate onPick={(name) => { localStorage.setItem("et_me", name); setMe(name); }} />;
   return <Planner me={me} onSwitch={() => { localStorage.removeItem("et_me"); setMe(null); }} />;
 }
