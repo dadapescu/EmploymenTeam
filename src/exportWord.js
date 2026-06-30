@@ -63,10 +63,6 @@ export async function exportToWord(tasks) {
       spacing: { after: 60 },
     }),
     new Paragraph({
-      children: [new TextRun({ text: "Kinstellar Bucharest · Task overview", size: 20, color: ORANGE, bold: true })],
-      spacing: { after: 40 },
-    }),
-    new Paragraph({
       children: [new TextRun({ text: `Generat: ${today}`, size: 18, color: GRAY70, italics: true })],
       spacing: { after: 300 },
     }),
