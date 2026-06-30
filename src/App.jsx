@@ -184,12 +184,29 @@ function Planner({ me, onSwitch }) {
 
   // ── Task ops ──
   function openAddTask(col) { setTaskForm({ ...emptyTask, column: col }); setEditId(null); setModal("task"); }
-  function openEditTask(t) { setTaskForm({ ...t }); setEditId(t.id); setModal("task"); }
+  function openEditTask(t) {
+    setTaskForm({
+      title: t.title || "",
+      assignees: t.assignees || [],
+      due: t.due || "",
+      important: !!t.important,
+      done: !!t.done,
+      column: t.column || me,
+      private: !!t.private,
+      createdBy: t.createdBy || me,
+      ...(t.createdAt ? { createdAt: t.createdAt } : {}),
+    });
+    setEditId(t.id);
+    setModal("task");
+  }
   async function saveTask() {
     if (!taskForm.title.trim()) return;
     const { id, ...data } = taskForm;
-    if (editId) await updateDoc(doc(db, "tasks", editId), data);
-    else await addDoc(collection(db, "tasks"), { ...data, createdAt: Date.now() });
+    // ensure no undefined values reach Firestore
+    const clean = {};
+    for (const [k, v] of Object.entries(data)) clean[k] = v === undefined ? null : v;
+    if (editId) await updateDoc(doc(db, "tasks", editId), clean);
+    else await addDoc(collection(db, "tasks"), { ...clean, createdAt: Date.now() });
     setModal(null);
   }
   async function deleteTask(id) { await deleteDoc(doc(db, "tasks", id)); }
@@ -327,7 +344,7 @@ function Planner({ me, onSwitch }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: K.gray70 }}>{col}{isMe ? " (tu)" : ""}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: K.gray70 }}>{col === "BD" ? "BD / NB" : col}{isMe ? " (tu)" : ""}</span>
                       {active.length > 0 && <span style={{ background: color, color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 10, fontWeight: 700 }}>{active.length}</span>}
                     </div>
                     <button onClick={() => openAddTask(col)}
