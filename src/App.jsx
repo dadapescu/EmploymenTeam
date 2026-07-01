@@ -238,13 +238,26 @@ function Planner({ me, onSwitch }) {
 
   function sortTasks(list) {
     return [...list].sort((a, b) => {
+      // 1. Overdue tasks first
       const aOverdue = !a.done && isOverdue(a.due) ? 1 : 0;
       const bOverdue = !b.done && isOverdue(b.due) ? 1 : 0;
       if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+
+      // 2. Important (star) next
       const aImp = a.important ? 1 : 0;
       const bImp = b.important ? 1 : 0;
       if (aImp !== bImp) return bImp - aImp;
-      return (b.createdAt || 0) - (a.createdAt || 0);
+
+      // 3. Tasks with a deadline come before those without
+      const aHas = a.due ? 1 : 0;
+      const bHas = b.due ? 1 : 0;
+      if (aHas !== bHas) return bHas - aHas;
+
+      // 4a. Both have deadlines -> soonest first
+      if (a.due && b.due) return a.due.localeCompare(b.due);
+
+      // 4b. Neither has a deadline -> keep insertion order (oldest first)
+      return (a.createdAt || 0) - (b.createdAt || 0);
     });
   }
 
