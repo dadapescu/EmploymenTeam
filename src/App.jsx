@@ -497,7 +497,7 @@ function Planner({ me, onSwitch }) {
                 </Field>
                 <Field label="De la"><DatePicker value={leaveForm.start} onChange={(v) => setLeaveForm((f) => ({ ...f, start: v }))} /></Field>
                 <Field label="Pana la"><DatePicker value={leaveForm.end} onChange={(v) => setLeaveForm((f) => ({ ...f, end: v }))} /></Field>
-                <Field label="Nota"><input value={leaveForm.label} onChange={(e) => setLeaveForm((f) => ({ ...f, label: e.target.value }))} placeholder="Ex: Concediu vara" style={iStyle} /></Field>
+                <Field label="Nota"><input value={leaveForm.label} onChange={(e) => setLeaveForm((f) => ({ ...f, label: e.target.value }))} style={iStyle} /></Field>
                 <ModalActions onCancel={() => setModal(null)} onSave={saveLeave} disabled={!leaveForm.start || !leaveForm.end} label={editId ? "Salveaza" : "Adauga"} />
               </>
             )}
@@ -696,7 +696,6 @@ function ClientInput({ value, onChange, suggestions }) {
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Ex: HAR"
         style={iStyle}
       />
       {open && matches.length > 0 && (
