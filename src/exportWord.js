@@ -93,7 +93,8 @@ export async function exportToWord(tasks) {
 
     for (const t of pTasks) {
       const overdue = isOverdue(t.due, t.done);
-      const titleRuns = [new TextRun({ text: t.title || "", size: 20, color: GRAY70, strike: t.done })];
+      const fullTitle = t.client ? `${t.client} - ${t.title || ""}` : (t.title || "");
+      const titleRuns = [new TextRun({ text: fullTitle, size: 20, color: GRAY70, strike: t.done })];
       if (t.important) titleRuns.unshift(new TextRun({ text: "★ ", color: ORANGE, size: 20 }));
 
       const dueRuns = [new TextRun({ text: fmtDate(t.due), size: 20, color: overdue ? RED : GRAY70, bold: overdue })];

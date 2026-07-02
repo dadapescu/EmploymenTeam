@@ -159,6 +159,19 @@ function Planner({ me, onSwitch }) {
 
   const extraNames = useMemo(() => allPeople.filter((n) => !BASE_COLORS[n]), [allPeople]);
 
+  // Known clients: from explicit client fields + legacy "CLIENT - task" title prefixes (excluding BD)
+  const knownClients = useMemo(() => {
+    const set = new Set();
+    for (const t of tasks) {
+      if (t.client) set.add(t.client.trim());
+      else if (t.column !== "BD" && t.title?.includes(" - ")) {
+        const prefix = t.title.slice(0, t.title.indexOf(" - ")).trim();
+        if (prefix && prefix.length <= 30) set.add(prefix);
+      }
+    }
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
   // Columns: me first, then others, then BD
   const COLUMNS = useMemo(() => {
     const others = allPeople.filter((n) => n !== me);
@@ -177,7 +190,7 @@ function Planner({ me, onSwitch }) {
     return () => { u1(); u2(); };
   }, []);
 
-  const emptyTask = { title: "", assignees: [], due: "", important: false, column: me, done: false, private: false, createdBy: me };
+  const emptyTask = { title: "", client: "", assignees: [], due: "", important: false, column: me, done: false, private: false, createdBy: me };
   const emptyLeave = { person: me, start: "", end: "", label: "" };
   const [taskForm, setTaskForm] = useState(emptyTask);
   const [leaveForm, setLeaveForm] = useState(emptyLeave);
@@ -185,8 +198,17 @@ function Planner({ me, onSwitch }) {
   // ── Task ops ──
   function openAddTask(col) { setTaskForm({ ...emptyTask, column: col }); setEditId(null); setModal("task"); }
   function openEditTask(t) {
+    // Legacy tasks: split "CLIENT - task" into separate fields (not for BD)
+    let client = t.client || "";
+    let title = t.title || "";
+    if (!client && t.column !== "BD" && title.includes(" - ")) {
+      const idx = title.indexOf(" - ");
+      client = title.slice(0, idx).trim();
+      title = title.slice(idx + 3).trim();
+    }
     setTaskForm({
-      title: t.title || "",
+      title,
+      client,
       assignees: t.assignees || [],
       due: t.due || "",
       important: !!t.important,
@@ -410,9 +432,18 @@ function Planner({ me, onSwitch }) {
             {modal === "task" && (
               <>
                 <div style={{ fontSize: 16, fontWeight: 700, color: K.gray70, marginBottom: 20, borderBottom: `3px solid ${K.orange}`, paddingBottom: 10 }}>{editId ? "Editeaza task" : "Task nou"}</div>
-                <Field label="Titlu">
-                  <input value={taskForm.title} onChange={(e) => setTaskForm((f) => ({ ...f, title: e.target.value }))} style={iStyle} />
-                </Field>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {taskForm.column !== "BD" && (
+                    <div style={{ flex: 1, marginBottom: 14 }}>
+                      <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: K.gray30, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Client</label>
+                      <ClientInput value={taskForm.client} onChange={(v) => setTaskForm((f) => ({ ...f, client: v }))} suggestions={knownClients} />
+                    </div>
+                  )}
+                  <div style={{ flex: 2, marginBottom: 14 }}>
+                    <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: K.gray30, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Task</label>
+                    <input value={taskForm.title} onChange={(e) => setTaskForm((f) => ({ ...f, title: e.target.value }))} style={iStyle} />
+                  </div>
+                </div>
                 <Field label="Impreuna cu">
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {allPeople.map((name) => {
@@ -502,7 +533,7 @@ function TaskCard({ task, col, isBD, color, extraNames, onOpen, onToggleImportan
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: overdue ? "#e53e3e" : K.gray70, lineHeight: 1.4, paddingRight: 18, marginBottom: 8, textDecoration: done ? "line-through" : "none" }}>
             {task.private && <span title="Privat" style={{ marginRight: 4 }}>🔒</span>}
-            {task.title}
+            {task.client ? `${task.client} - ${task.title}` : task.title}
           </div>
           {involved.length > 0 && (
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
@@ -652,6 +683,39 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
+function ClientInput({ value, onChange, suggestions }) {
+  const [open, setOpen] = useState(false);
+  const matches = value
+    ? suggestions.filter((c) => c.toLowerCase().startsWith(value.toLowerCase()) && c.toLowerCase() !== value.toLowerCase())
+    : [];
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Ex: HAR"
+        style={iStyle}
+      />
+      {open && matches.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: `1.5px solid ${K.gray10}`, borderRadius: 8, marginTop: 4, zIndex: 300, maxHeight: 180, overflowY: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
+          {matches.map((c) => (
+            <div key={c}
+              onMouseDown={() => { onChange(c); setOpen(false); }}
+              style={{ padding: "9px 12px", fontSize: 14, color: K.gray70, cursor: "pointer", borderBottom: `1px solid ${K.grayBg}` }}
+              onMouseEnter={(e) => e.currentTarget.style.background = K.grayBg}
+              onMouseLeave={(e) => e.currentTarget.style.background = "#fff"}>
+              {c}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DatePicker({ value, onChange }) {
   const now = new Date().getFullYear();
   const [parts, setParts] = useState(() => {
