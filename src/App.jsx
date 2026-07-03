@@ -716,49 +716,94 @@ function ClientInput({ value, onChange, suggestions }) {
 }
 
 function DatePicker({ value, onChange }) {
-  const now = new Date().getFullYear();
-  const [parts, setParts] = useState(() => {
-    if (value && value.includes("-")) {
-      const [yy, mm, dd] = value.split("-");
-      return { d: String(parseInt(dd)), m: String(parseInt(mm)), y: yy };
-    }
-    return { d: "", m: "", y: String(now) };
-  });
+  const [open, setOpen] = useState(false);
+  const today = new Date();
+  const initial = value ? new Date(value + "T00:00:00") : today;
+  const [viewY, setViewY] = useState(initial.getFullYear());
+  const [viewM, setViewM] = useState(initial.getMonth());
 
   const months = ["Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"];
-  const years = [];
-  for (let yr = now; yr <= now + 3; yr++) years.push(yr);
-  const daysInM = (yy, mm) => (mm ? new Date(parseInt(yy) || now, parseInt(mm), 0).getDate() : 31);
-  const dayCount = daysInM(parts.y, parts.m);
+  const DAYS = ["Lu", "Ma", "Mi", "Jo", "Vi", "Sa", "Du"];
 
-  function update(next) {
-    setParts(next);
-    if (next.d && next.m && next.y) {
-      onChange(`${next.y}-${String(next.m).padStart(2, "0")}-${String(next.d).padStart(2, "0")}`);
-    } else {
-      onChange("");
-    }
+  function fmtDisplay(v) {
+    if (!v) return "";
+    const d = new Date(v + "T00:00:00");
+    const dayNames = ["Duminica", "Luni", "Marti", "Miercuri", "Joi", "Vineri", "Sambata"];
+    return `${dayNames[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
   }
 
-  const sel = { padding: "9px 8px", borderRadius: 8, border: `1.5px solid ${K.gray10}`, fontSize: 14, color: K.gray70, outline: "none", fontFamily: "inherit", background: "#fff", cursor: "pointer" };
+  function prevMonth() { if (viewM === 0) { setViewM(11); setViewY(viewY - 1); } else setViewM(viewM - 1); }
+  function nextMonth() { if (viewM === 11) { setViewM(0); setViewY(viewY + 1); } else setViewM(viewM + 1); }
+
+  const daysCount = new Date(viewY, viewM + 1, 0).getDate();
+  let firstDay = new Date(viewY, viewM, 1).getDay();
+  firstDay = firstDay === 0 ? 6 : firstDay - 1; // Monday first
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysCount; d++) cells.push(d);
+
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  function pick(d) {
+    const iso = `${viewY}-${String(viewM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    onChange(iso);
+    setOpen(false);
+  }
+
+  const navBtn = { background: "none", border: `1.5px solid ${K.gray10}`, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: K.gray50, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" };
 
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      <select value={parts.d} onChange={(e) => update({ ...parts, d: e.target.value })} style={{ ...sel, flex: 1 }}>
-        <option value="">Zi</option>
-        {Array.from({ length: dayCount }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
-      <select value={parts.m} onChange={(e) => update({ ...parts, m: e.target.value })} style={{ ...sel, flex: 2 }}>
-        <option value="">Luna</option>
-        {months.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}
-      </select>
-      <select value={parts.y} onChange={(e) => update({ ...parts, y: e.target.value })} style={{ ...sel, flex: 1.2 }}>
-        <option value="">An</option>
-        {years.map((yr) => <option key={yr} value={yr}>{yr}</option>)}
-      </select>
-      {(parts.d || parts.m) && (
-        <button onClick={() => update({ d: "", m: "", y: String(now) })} title="Sterge data"
-          style={{ border: `1.5px solid ${K.gray10}`, background: "#fff", borderRadius: 8, padding: "0 10px", height: 38, cursor: "pointer", color: K.gray30, fontSize: 16 }}>×</button>
+    <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <button onClick={() => setOpen((o) => !o)}
+          style={{ ...iStyle, flex: 1, textAlign: "left", cursor: "pointer", background: "#fff", color: value ? K.gray70 : K.gray30 }}>
+          {value ? fmtDisplay(value) : "Alege data"}
+        </button>
+        {value && (
+          <button onClick={() => onChange("")} title="Sterge data"
+            style={{ border: `1.5px solid ${K.gray10}`, background: "#fff", borderRadius: 8, padding: "0 10px", height: 38, cursor: "pointer", color: K.gray30, fontSize: 16 }}>×</button>
+        )}
+      </div>
+
+      {open && (
+        <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 6, background: "#fff", border: `1.5px solid ${K.gray10}`, borderRadius: 12, padding: 14, zIndex: 300, boxShadow: "0 12px 32px rgba(0,0,0,0.15)", width: 280 }}>
+          {/* Month navigation */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <button onClick={prevMonth} style={navBtn}>‹</button>
+            <div style={{ fontSize: 14, fontWeight: 700, color: K.gray70 }}>{months[viewM]} {viewY}</div>
+            <button onClick={nextMonth} style={navBtn}>›</button>
+          </div>
+          {/* Day names */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+            {DAYS.map((d, i) => (
+              <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: i >= 5 ? K.gray20 : K.gray30, padding: "4px 0" }}>{d}</div>
+            ))}
+          </div>
+          {/* Days grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+            {cells.map((d, i) => {
+              if (!d) return <div key={`e${i}`} />;
+              const iso = `${viewY}-${String(viewM + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+              const isSelected = value === iso;
+              const isToday = todayIso === iso;
+              const isWeekend = (i % 7 === 5 || i % 7 === 6);
+              return (
+                <button key={d} onClick={() => pick(d)}
+                  style={{
+                    padding: "7px 0", borderRadius: 7, fontSize: 13, cursor: "pointer",
+                    border: isToday && !isSelected ? `1.5px solid ${K.orange}` : "1.5px solid transparent",
+                    background: isSelected ? K.orange : "transparent",
+                    color: isSelected ? "#fff" : isWeekend ? K.gray30 : K.gray70,
+                    fontWeight: isSelected || isToday ? 700 : 400,
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = K.grayBg; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}>
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );
