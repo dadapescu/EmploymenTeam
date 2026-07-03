@@ -190,7 +190,7 @@ function Planner({ me, onSwitch }) {
     return () => { u1(); u2(); };
   }, []);
 
-  const emptyTask = { title: "", client: "", assignees: [], due: "", important: false, column: me, done: false, private: false, createdBy: me };
+  const emptyTask = { title: "", client: "", assignees: [], due: "", important: false, column: me, done: false, doneFor: [], private: false, createdBy: me };
   const emptyLeave = { person: me, start: "", end: "", label: "" };
   const [taskForm, setTaskForm] = useState(emptyTask);
   const [leaveForm, setLeaveForm] = useState(emptyLeave);
@@ -213,6 +213,7 @@ function Planner({ me, onSwitch }) {
       due: t.due || "",
       important: !!t.important,
       done: !!t.done,
+      doneFor: t.doneFor || [],
       column: t.column || me,
       private: !!t.private,
       createdBy: t.createdBy || me,
@@ -237,6 +238,12 @@ function Planner({ me, onSwitch }) {
   async function deleteTask(id) { await deleteDoc(doc(db, "tasks", id)); }
   async function toggleImportant(id) { const t = tasks.find((x) => x.id === id); await updateDoc(doc(db, "tasks", id), { important: !t.important }); }
   async function toggleDone(id) { const t = tasks.find((x) => x.id === id); await updateDoc(doc(db, "tasks", id), { done: !t.done }); }
+  async function toggleDoneForMe(id, person) {
+    const t = tasks.find((x) => x.id === id);
+    const current = t.doneFor || [];
+    const next = current.includes(person) ? current.filter((p) => p !== person) : [...current, person];
+    await updateDoc(doc(db, "tasks", id), { doneFor: next });
+  }
   function toggleAssignee(name) {
     setTaskForm((f) => ({ ...f, assignees: f.assignees.includes(name) ? f.assignees.filter((a) => a !== name) : [...f.assignees, name] }));
   }
@@ -258,11 +265,12 @@ function Planner({ me, onSwitch }) {
     return t.createdBy === me || t.assignees?.includes(me);
   }
 
-  function sortTasks(list) {
+  function sortTasks(list, col) {
+    const isDoneFor = (t) => t.done || (t.doneFor || []).includes(col);
     return [...list].sort((a, b) => {
       // 1. Overdue tasks first
-      const aOverdue = !a.done && isOverdue(a.due) ? 1 : 0;
-      const bOverdue = !b.done && isOverdue(b.due) ? 1 : 0;
+      const aOverdue = !isDoneFor(a) && isOverdue(a.due) ? 1 : 0;
+      const bOverdue = !isDoneFor(b) && isOverdue(b.due) ? 1 : 0;
       if (aOverdue !== bOverdue) return bOverdue - aOverdue;
 
       // 2. Important (star) next
@@ -285,8 +293,8 @@ function Planner({ me, onSwitch }) {
 
   function tasksForColumn(col) {
     const visible = tasks.filter(isVisibleToMe);
-    if (col === "BD") return sortTasks(visible.filter((t) => t.column === "BD"));
-    return sortTasks(visible.filter((t) => t.column === col || (t.assignees?.includes(col) && t.column !== col && t.column !== "BD")));
+    if (col === "BD") return sortTasks(visible.filter((t) => t.column === "BD"), col);
+    return sortTasks(visible.filter((t) => t.column === col || (t.assignees?.includes(col) && t.column !== col && t.column !== "BD")), col);
   }
 
   const myColor = getPersonColor(me, extraNames);
@@ -371,8 +379,9 @@ function Planner({ me, onSwitch }) {
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLUMNS.length}, minmax(220px, 1fr))`, gap: 16, alignItems: "start" }}>
             {COLUMNS.map((col) => {
               const all = tasksForColumn(col);
-              const active = all.filter((t) => !t.done);
-              const done = all.filter((t) => t.done);
+              const isDoneForCol = (t) => t.done || (t.doneFor || []).includes(col);
+              const active = all.filter((t) => !isDoneForCol(t));
+              const done = all.filter((t) => isDoneForCol(t));
               const isBD = col === "BD";
               const isMe = col === me;
               const pc = isBD ? { bg: "#1a1a1a", pale: "#e8e8e8" } : getPersonColor(col, extraNames);
@@ -394,8 +403,8 @@ function Planner({ me, onSwitch }) {
                       <div style={{ background: K.white, border: `1.5px dashed ${K.gray10}`, borderRadius: 10, padding: "20px 14px", textAlign: "center", color: K.gray30, fontSize: 12 }}>Niciun task</div>
                     )}
                     {active.map((t) => (
-                      <TaskCard key={t.id + col} task={t} col={col} isBD={isBD} color={color} extraNames={extraNames}
-                        onOpen={openEditTask} onToggleImportant={toggleImportant} onToggleDone={toggleDone} onDelete={deleteTask} />
+                      <TaskCard key={t.id + col} task={t} col={col} isBD={isBD} color={color} extraNames={extraNames} me={me}
+                        onOpen={openEditTask} onToggleImportant={toggleImportant} onToggleDone={toggleDone} onToggleDoneForMe={toggleDoneForMe} onDelete={deleteTask} />
                     ))}
                   </div>
 
@@ -409,8 +418,8 @@ function Planner({ me, onSwitch }) {
                       {expandedDone[col] && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
                           {done.map((t) => (
-                            <TaskCard key={t.id + col + "d"} task={t} col={col} isBD={isBD} color={color} extraNames={extraNames}
-                              onOpen={openEditTask} onToggleImportant={toggleImportant} onToggleDone={toggleDone} onDelete={deleteTask} />
+                            <TaskCard key={t.id + col + "d"} task={t} col={col} isBD={isBD} color={color} extraNames={extraNames} me={me}
+                              onOpen={openEditTask} onToggleImportant={toggleImportant} onToggleDone={toggleDone} onToggleDoneForMe={toggleDoneForMe} onDelete={deleteTask} />
                           ))}
                         </div>
                       )}
@@ -464,14 +473,19 @@ function Planner({ me, onSwitch }) {
                     style={{ background: "none", border: `1.5px solid ${taskForm.important ? K.orange : K.gray10}`, borderRadius: 7, padding: "7px 14px", cursor: "pointer", color: taskForm.important ? K.orange : K.gray30, fontSize: 13, fontWeight: 600 }}>
                     ★ Important
                   </button>
-                  <button onClick={() => setTaskForm((f) => ({ ...f, done: !f.done }))}
-                    style={{ background: taskForm.done ? K.gray70 : "none", border: `1.5px solid ${taskForm.done ? K.gray70 : K.gray10}`, borderRadius: 7, padding: "7px 14px", cursor: "pointer", color: taskForm.done ? "#fff" : K.gray30, fontSize: 13, fontWeight: 600 }}>
-                    ✓ Done
-                  </button>
                   <button onClick={() => setTaskForm((f) => ({ ...f, private: !f.private }))}
                     style={{ background: taskForm.private ? K.gray70 : "none", border: `1.5px solid ${taskForm.private ? K.gray70 : K.gray10}`, borderRadius: 7, padding: "7px 14px", cursor: "pointer", color: taskForm.private ? "#fff" : K.gray30, fontSize: 13, fontWeight: 600 }}>
                     🔒 Privat
                   </button>
+                  {taskForm.assignees.length > 0 && (
+                    <button onClick={() => setTaskForm((f) => ({
+                      ...f,
+                      doneFor: (f.doneFor || []).includes(me) ? f.doneFor.filter((p) => p !== me) : [...(f.doneFor || []), me],
+                    }))}
+                      style={{ background: (taskForm.doneFor || []).includes(me) ? K.gray70 : "none", border: `1.5px solid ${(taskForm.doneFor || []).includes(me) ? K.gray70 : K.gray10}`, borderRadius: 7, padding: "7px 14px", cursor: "pointer", color: (taskForm.doneFor || []).includes(me) ? "#fff" : K.gray30, fontSize: 13, fontWeight: 600 }}>
+                      ✓ Done for me
+                    </button>
+                  )}
                 </div>
                 {taskForm.private && (
                   <div style={{ fontSize: 11, color: K.gray30, marginTop: -12, marginBottom: 18 }}>
@@ -509,9 +523,10 @@ function Planner({ me, onSwitch }) {
 }
 
 // ── Task card ─────────────────────────────────────────────────────
-function TaskCard({ task, col, isBD, color, extraNames, onOpen, onToggleImportant, onToggleDone, onDelete }) {
-  const overdue = !task.done && isOverdue(task.due);
-  const done = task.done;
+function TaskCard({ task, col, isBD, color, extraNames, me, onOpen, onToggleImportant, onToggleDone, onToggleDoneForMe, onDelete }) {
+  const isOwnColumn = col === me;
+  const doneForCol = task.done || (task.doneFor || []).includes(col);
+  const overdue = !doneForCol && isOverdue(task.due);
 
   // Everyone involved in this task (owner column + assignees), excluding the current column's person
   const involved = useMemo(() => {
@@ -521,17 +536,23 @@ function TaskCard({ task, col, isBD, color, extraNames, onOpen, onToggleImportan
     return [...set];
   }, [task.column, task.assignees, col, isBD]);
 
+  function handleCheckboxClick(e) {
+    e.stopPropagation();
+    if (isOwnColumn) onToggleDone(task.id);
+    else onToggleDoneForMe(task.id, col);
+  }
+
   return (
-    <div onClick={() => onOpen(task)} style={{ background: done ? K.grayBg : K.white, border: `1.5px solid ${overdue ? "#e53e3e" : K.gray10}`, borderLeft: `4px solid ${overdue ? "#e53e3e" : done ? K.gray20 : color}`, borderRadius: 10, padding: "12px 12px 10px", cursor: "pointer", position: "relative", opacity: done ? 0.75 : 1 }}>
+    <div onClick={() => onOpen(task)} style={{ background: doneForCol ? K.grayBg : K.white, border: `1.5px solid ${overdue ? "#e53e3e" : K.gray10}`, borderLeft: `4px solid ${overdue ? "#e53e3e" : doneForCol ? K.gray20 : color}`, borderRadius: 10, padding: "12px 12px 10px", cursor: "pointer", position: "relative", opacity: doneForCol ? 0.75 : 1 }}>
       <button onClick={(e) => { e.stopPropagation(); onToggleImportant(task.id); }}
         style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", cursor: "pointer", fontSize: 14, color: task.important ? K.orange : K.gray20, padding: 0 }}>★</button>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <button onClick={(e) => { e.stopPropagation(); onToggleDone(task.id); }}
-          style={{ flexShrink: 0, marginTop: 1, width: 18, height: 18, borderRadius: 5, border: `2px solid ${done ? color : K.gray20}`, background: done ? color : "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, padding: 0 }}>
-          {done ? "✓" : ""}
+        <button onClick={handleCheckboxClick} title={isOwnColumn ? "Inchide pentru toti" : "Inchide pentru mine"}
+          style={{ flexShrink: 0, marginTop: 1, width: 18, height: 18, borderRadius: 5, border: `2px solid ${doneForCol ? color : K.gray20}`, background: doneForCol ? color : "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700, padding: 0 }}>
+          {doneForCol ? "✓" : ""}
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: overdue ? "#e53e3e" : K.gray70, lineHeight: 1.4, paddingRight: 18, marginBottom: 8, textDecoration: done ? "line-through" : "none" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: overdue ? "#e53e3e" : K.gray70, lineHeight: 1.4, paddingRight: 18, marginBottom: 8, textDecoration: doneForCol ? "line-through" : "none" }}>
             {task.private && <span title="Privat" style={{ marginRight: 4 }}>🔒</span>}
             {task.client ? `${task.client} - ${task.title}` : task.title}
           </div>
