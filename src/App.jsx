@@ -5,6 +5,7 @@ import {
   collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc,
 } from "firebase/firestore";
 import { exportToWord } from "./exportWord";
+import { notifyNewTask } from "./emailNotify";
 
 // ── Kinstellar palette ──────────────────────────────────────────
 const K = {
@@ -228,8 +229,15 @@ function Planner({ me, onSwitch }) {
     const clean = {};
     for (const [k, v] of Object.entries(data)) clean[k] = v === undefined ? null : v;
     try {
-      if (editId) await updateDoc(doc(db, "tasks", editId), clean);
-      else await addDoc(collection(db, "tasks"), { ...clean, createdAt: Date.now() });
+      if (editId) {
+        await updateDoc(doc(db, "tasks", editId), clean);
+      } else {
+        await addDoc(collection(db, "tasks"), { ...clean, createdAt: Date.now() });
+        // Notify everyone involved (owner column + assignees) except the creator, new tasks only
+        const recipients = [...(clean.column !== "BD" ? [clean.column] : []), ...(clean.assignees || [])];
+        const fullTitle = clean.client ? `${clean.client} - ${clean.title}` : clean.title;
+        notifyNewTask({ fromName: me, taskTitle: fullTitle, recipients });
+      }
       setModal(null);
     } catch (err) {
       alert("Eroare la salvare: " + (err?.message || err));
