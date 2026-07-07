@@ -5,7 +5,7 @@ import {
   collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc,
 } from "firebase/firestore";
 import { exportToWord } from "./exportWord";
-import { notifyNewTask } from "./emailNotify";
+import { notifyNewTask, notifyOverdue } from "./emailNotify";
 
 // ── Kinstellar palette ──────────────────────────────────────────
 const K = {
@@ -193,6 +193,23 @@ function Planner({ me, onSwitch }) {
 
   const emptyTask = { title: "", client: "", assignees: [], due: "", important: false, column: me, done: false, doneFor: [], private: false, createdBy: me };
   const emptyLeave = { person: me, start: "", end: "", label: "" };
+
+  // ── Overdue email check: fires once per task, whichever client notices first ──
+  useEffect(() => {
+    if (loading || tasks.length === 0) return;
+    for (const t of tasks) {
+      if (t.column === "BD" || t.done || t.overdueNotified) continue;
+      if (!isOverdue(t.due)) continue;
+      const recipients = [t.column, ...(t.assignees || [])].filter((p) => !(t.doneFor || []).includes(p));
+      if (recipients.length === 0) continue;
+      // Mark immediately to avoid duplicate sends if multiple people have the app open
+      updateDoc(doc(db, "tasks", t.id), { overdueNotified: true }).then(() => {
+        const fullTitle = t.client ? `${t.client} - ${t.title}` : t.title;
+        notifyOverdue({ taskTitle: fullTitle, recipients });
+      });
+    }
+  }, [tasks, loading]);
+
   const [taskForm, setTaskForm] = useState(emptyTask);
   const [leaveForm, setLeaveForm] = useState(emptyLeave);
 
@@ -230,6 +247,8 @@ function Planner({ me, onSwitch }) {
     for (const [k, v] of Object.entries(data)) clean[k] = v === undefined ? null : v;
     try {
       if (editId) {
+        const original = tasks.find((t) => t.id === editId);
+        if (original && original.due !== clean.due) clean.overdueNotified = false;
         await updateDoc(doc(db, "tasks", editId), clean);
       } else {
         await addDoc(collection(db, "tasks"), { ...clean, createdAt: Date.now() });
