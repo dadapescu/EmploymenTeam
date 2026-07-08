@@ -188,5 +188,5 @@ export async function exportToWord(tasks) {
 
   const blob = await Packer.toBlob(doc);
   const stamp = new Date().toISOString().slice(0, 10);
-  saveAs(blob, `Employment-Team-${stamp}.docx`);
+  saveAs(blob, `Employment-Team-v3-${stamp}.docx`);
 }
