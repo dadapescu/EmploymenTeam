@@ -285,6 +285,7 @@ function Planner({ me, onSwitch }) {
 
   // ── Leave ops ──
   function openAddLeave() { setLeaveForm({ ...emptyLeave, person: me }); setEditId(null); setModal("leave"); }
+  function openAddLeaveForDate(dateIso) { setLeaveForm({ ...emptyLeave, person: me, start: dateIso }); setEditId(null); setModal("leave"); }
   async function saveLeave() {
     if (!leaveForm.start || !leaveForm.end) return;
     const { id, ...data } = leaveForm;
@@ -474,7 +475,7 @@ function Planner({ me, onSwitch }) {
         </div>
       )}
 
-      {tab === "leaves" && <LeaveTab leaves={leaves} allPeople={allPeople} extraNames={extraNames} onDelete={deleteLeave} onEdit={(l) => { setLeaveForm({ ...l }); setEditId(l.id); setModal("leave"); }} />}
+      {tab === "leaves" && <LeaveTab leaves={leaves} allPeople={allPeople} extraNames={extraNames} onDelete={deleteLeave} onEdit={(l) => { setLeaveForm({ ...l }); setEditId(l.id); setModal("leave"); }} onAddForDate={openAddLeaveForDate} />}
 
       {/* Modals */}
       {modal && (
@@ -632,7 +633,7 @@ function TaskCard({ task, col, isBD, color, extraNames, me, onOpen, onToggleImpo
 }
 
 // ── Leave calendar ────────────────────────────────────────────────
-function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
+function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit, onAddForDate }) {
   const [showPast, setShowPast] = useState(false);
 
   const now = new Date();
@@ -686,8 +687,8 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
             else if (bgs.length >= 3) { bg = `linear-gradient(135deg, ${bgs[0]} 33%, ${bgs[1]} 33% 66%, ${bgs[2]} 66%)`; tc = "#fff"; }
             return (
               <div key={d} title={dl.map((l) => l.person).join(", ")}
-                onClick={() => dl.length > 0 && onEdit(dl[0])}
-                style={{ textAlign: "center", fontSize: 11, fontWeight: today ? 700 : 400, color: tc, background: bg, borderRadius: 5, padding: "4px 2px", border: today ? `2px solid ${K.orange}` : "2px solid transparent", cursor: dl.length > 0 ? "pointer" : "default" }}>
+                onClick={() => (dl.length > 0 ? onEdit(dl[0]) : onAddForDate(iso))}
+                style={{ textAlign: "center", fontSize: 11, fontWeight: today ? 700 : 400, color: tc, background: bg, borderRadius: 5, padding: "4px 2px", border: today ? `2px solid ${K.orange}` : "2px solid transparent", cursor: "pointer" }}>
                 {d}
               </div>
             );
