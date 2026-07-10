@@ -420,7 +420,7 @@ function Planner({ me, onSwitch }) {
               const pc = isBD ? { bg: "#1a1a1a", pale: "#e8e8e8" } : getPersonColor(col, extraNames);
               const color = pc.bg;
               return (
-                <div key={col} style={{ opacity: onLeave ? 0.55 : 1 }}>
+                <div key={col}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />
@@ -432,6 +432,7 @@ function Planner({ me, onSwitch }) {
                       style={{ background: "none", border: `1.5px dashed ${K.gray20}`, borderRadius: 6, width: 24, height: 24, cursor: "pointer", color: K.gray30, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                   </div>
 
+                  <div style={{ opacity: onLeave ? 0.55 : 1 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {active.length === 0 && (
                       <div style={{ background: K.white, border: `1.5px dashed ${K.gray10}`, borderRadius: 10, padding: "20px 14px", textAlign: "center", color: K.gray30, fontSize: 12 }}>Niciun task</div>
@@ -459,6 +460,7 @@ function Planner({ me, onSwitch }) {
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
               );
             })}
