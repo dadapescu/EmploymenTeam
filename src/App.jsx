@@ -426,7 +426,7 @@ function Planner({ me, onSwitch }) {
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />
                       <span style={{ fontSize: 13, fontWeight: 700, color: K.gray70 }}>{col === "BD" ? "BD / NB" : col}{isMe ? " (tu)" : ""}</span>
                       {active.length > 0 && <span style={{ background: color, color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 10, fontWeight: 700 }}>{active.length}</span>}
-                      {onLeave && <span style={{ background: "#f0ede6", color: "#8a7a4f", borderRadius: 10, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>🌴 Concediu</span>}
+                      {onLeave && <span style={{ fontSize: 13, fontWeight: 700, color: K.gray70 }}>🌴 Concediu</span>}
                     </div>
                     <button onClick={() => openAddTask(col)}
                       style={{ background: "none", border: `1.5px dashed ${K.gray20}`, borderRadius: 6, width: 24, height: 24, cursor: "pointer", color: K.gray30, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
