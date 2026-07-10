@@ -44,6 +44,13 @@ function getPersonColor(name, extraNames) {
 function fmt(d) { if (!d) return ""; const [y, m, day] = d.split("-"); return `${day}.${m}.${y}`; }
 function isOverdue(due) { if (!due) return false; return new Date(due) < new Date(new Date().toDateString()); }
 function isoDate(y, m, d) { return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`; }
+function hexToRgba(hex, alpha) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function firstDayOfMonth(y, m) { let d = new Date(y, m, 1).getDay(); return d === 0 ? 6 : d - 1; }
 
@@ -192,7 +199,7 @@ function Planner({ me, onSwitch }) {
   }, []);
 
   const emptyTask = { title: "", client: "", assignees: [], due: "", important: false, column: me, done: false, doneFor: [], private: false, createdBy: me };
-  const emptyLeave = { person: me, start: "", end: "", label: "" };
+  const emptyLeave = { person: me, start: "", end: "", label: "", approved: false };
 
   // ── Overdue email check: fires once per task, whichever client notices first ──
   useEffect(() => {
@@ -447,7 +454,7 @@ function Planner({ me, onSwitch }) {
                       <button onClick={() => toggleExpandDone(col)}
                         style={{ width: "100%", display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: "6px 2px", color: K.gray50, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>
                         <span style={{ transform: expandedDone[col] ? "rotate(90deg)" : "none", display: "inline-block", fontSize: 9 }}>▶</span>
-                        Dobby is free <span style={{ background: K.gray10, color: K.gray50, borderRadius: 9, padding: "1px 7px", fontSize: 10 }}>{done.length}</span>
+                        Dobby is free
                       </button>
                       {expandedDone[col] && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
@@ -546,6 +553,16 @@ function Planner({ me, onSwitch }) {
                 </Field>
                 <Field label="De la"><DatePicker value={leaveForm.start} onChange={(v) => setLeaveForm((f) => ({ ...f, start: v }))} /></Field>
                 <Field label="Pana la"><DatePicker value={leaveForm.end} onChange={(v) => setLeaveForm((f) => ({ ...f, end: v }))} /></Field>
+                <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+                  <button onClick={() => setLeaveForm((f) => ({ ...f, approved: false }))}
+                    style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: `1.5px solid ${!leaveForm.approved ? K.orange : K.gray10}`, background: !leaveForm.approved ? K.orangePale : K.white, color: !leaveForm.approved ? K.orange : K.gray50, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Intended
+                  </button>
+                  <button onClick={() => setLeaveForm((f) => ({ ...f, approved: true }))}
+                    style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: `1.5px solid ${leaveForm.approved ? "#15803d" : K.gray10}`, background: leaveForm.approved ? "#eafaf0" : K.white, color: leaveForm.approved ? "#15803d" : K.gray50, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    Aprobat
+                  </button>
+                </div>
                 {editId && (
                   <button onClick={() => { deleteLeave(editId); setModal(null); }}
                     style={{ background: "none", border: "none", cursor: "pointer", color: "#e53e3e", fontSize: 12, fontWeight: 600, padding: 0, marginBottom: 16, textDecoration: "underline" }}>
@@ -658,10 +675,13 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
             if (!d) return <div key={`e${i}`} />;
             const iso = isoDate(y, m, d); const dl = leavesOnDay(iso);
             const weekend = (i % 7 === 5 || i % 7 === 6);
-            const bgs = dl.map((l) => getPersonColor(l.person, extraNames).bg).filter(Boolean);
+            const bgs = dl.map((l) => {
+              const pc = getPersonColor(l.person, extraNames);
+              return pc.bg ? hexToRgba(pc.bg, l.approved ? 1 : 0.4) : null;
+            }).filter(Boolean);
             const today = todayIso === iso;
             let bg = "transparent", tc = weekend ? K.gray30 : K.gray70;
-            if (bgs.length === 1) { bg = bgs[0]; tc = "#fff"; }
+            if (bgs.length === 1) { bg = bgs[0]; tc = dl[0]?.approved === false ? K.gray70 : "#fff"; }
             else if (bgs.length === 2) { bg = `linear-gradient(135deg, ${bgs[0]} 50%, ${bgs[1]} 50%)`; tc = "#fff"; }
             else if (bgs.length >= 3) { bg = `linear-gradient(135deg, ${bgs[0]} 33%, ${bgs[1]} 33% 66%, ${bgs[2]} 66%)`; tc = "#fff"; }
             return (
