@@ -547,7 +547,12 @@ function Planner({ me, onSwitch }) {
                 </Field>
                 <Field label="De la"><DatePicker value={leaveForm.start} onChange={(v) => setLeaveForm((f) => ({ ...f, start: v }))} /></Field>
                 <Field label="Pana la"><DatePicker value={leaveForm.end} onChange={(v) => setLeaveForm((f) => ({ ...f, end: v }))} /></Field>
-                <Field label="Nota"><input value={leaveForm.label} onChange={(e) => setLeaveForm((f) => ({ ...f, label: e.target.value }))} style={iStyle} /></Field>
+                {editId && (
+                  <button onClick={() => { deleteLeave(editId); setModal(null); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#e53e3e", fontSize: 12, fontWeight: 600, padding: 0, marginBottom: 16, textDecoration: "underline" }}>
+                    Sterge acest concediu
+                  </button>
+                )}
                 <ModalActions onCancel={() => setModal(null)} onSave={saveLeave} disabled={!leaveForm.start || !leaveForm.end} label={editId ? "Salveaza" : "Adauga"} />
               </>
             )}
@@ -660,7 +665,13 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
             if (bgs.length === 1) { bg = bgs[0]; tc = "#fff"; }
             else if (bgs.length === 2) { bg = `linear-gradient(135deg, ${bgs[0]} 50%, ${bgs[1]} 50%)`; tc = "#fff"; }
             else if (bgs.length >= 3) { bg = `linear-gradient(135deg, ${bgs[0]} 33%, ${bgs[1]} 33% 66%, ${bgs[2]} 66%)`; tc = "#fff"; }
-            return <div key={d} title={dl.map((l) => l.person).join(", ")} style={{ textAlign: "center", fontSize: 11, fontWeight: today ? 700 : 400, color: tc, background: bg, borderRadius: 5, padding: "4px 2px", border: today ? `2px solid ${K.orange}` : "2px solid transparent" }}>{d}</div>;
+            return (
+              <div key={d} title={dl.map((l) => l.person).join(", ")}
+                onClick={() => dl.length > 0 && onEdit(dl[0])}
+                style={{ textAlign: "center", fontSize: 11, fontWeight: today ? 700 : 400, color: tc, background: bg, borderRadius: 5, padding: "4px 2px", border: today ? `2px solid ${K.orange}` : "2px solid transparent", cursor: dl.length > 0 ? "pointer" : "default" }}>
+                {d}
+              </div>
+            );
           })}
         </div>
       </div>
@@ -682,22 +693,6 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
         <div style={{ marginLeft: "auto", fontSize: 12, color: K.gray30 }}>{currentAndFutureLeaves.length} {currentAndFutureLeaves.length === 1 ? "concediu" : "concedii"}</div>
       </div>
 
-      {currentAndFutureLeaves.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 28 }}>
-          {[...currentAndFutureLeaves].sort((a, b) => a.start.localeCompare(b.start)).map((l) => {
-            const pc = getPersonColor(l.person, extraNames);
-            return (
-              <div key={l.id} onClick={() => onEdit(l)} style={{ background: pc.pale, border: `1.5px solid ${pc.bg}`, borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: pc.bg }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: pc.bg }}>{l.person}</span>
-                <span style={{ fontSize: 12, color: K.gray50 }}>{fmt(l.start)} – {fmt(l.end)}</span>
-                {l.label && <span style={{ fontSize: 11, color: K.gray30 }}>· {l.label}</span>}
-                <button onClick={(e) => { e.stopPropagation(); onDelete(l.id); }} style={{ background: "none", border: "none", cursor: "pointer", color: K.gray20, fontSize: 15, padding: 0, marginLeft: 4 }}>×</button>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
         {months.map(({ y, m }) => renderMonthGrid(y, m))}
@@ -711,27 +706,9 @@ function LeaveTab({ leaves, allPeople, extraNames, onDelete, onEdit }) {
             Luni trecute <span style={{ background: K.gray10, color: K.gray50, borderRadius: 9, padding: "1px 7px", fontSize: 10 }}>{pastMonths.length}</span>
           </button>
           {showPast && (
-            <>
-              {pastLeaves.length > 0 && (
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0" }}>
-                  {[...pastLeaves].sort((a, b) => a.start.localeCompare(b.start)).map((l) => {
-                    const pc = getPersonColor(l.person, extraNames);
-                    return (
-                      <div key={l.id} onClick={() => onEdit(l)} style={{ background: pc.pale, border: `1.5px solid ${pc.bg}`, borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, opacity: 0.7 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: pc.bg }} />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: pc.bg }}>{l.person}</span>
-                        <span style={{ fontSize: 12, color: K.gray50 }}>{fmt(l.start)} – {fmt(l.end)}</span>
-                        {l.label && <span style={{ fontSize: 11, color: K.gray30 }}>· {l.label}</span>}
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(l.id); }} style={{ background: "none", border: "none", cursor: "pointer", color: K.gray20, fontSize: 15, padding: 0, marginLeft: 4 }}>×</button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20, marginTop: 14 }}>
-                {pastMonths.map(({ y, m }) => renderMonthGrid(y, m))}
-              </div>
-            </>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20, marginTop: 14 }}>
+              {pastMonths.map(({ y, m }) => renderMonthGrid(y, m))}
+            </div>
           )}
         </div>
       )}
